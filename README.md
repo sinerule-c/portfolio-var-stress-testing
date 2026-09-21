@@ -2,25 +2,26 @@
 
 ## Overview
 
-This project evaluates the market risk of a **$1,000,000 multi-asset portfolio** using Value at Risk (VaR), Expected Shortfall, Monte Carlo simulation, stress testing, and VaR backtesting.
+This project evaluates the market risk of a **$1,000,000 multi-asset portfolio** using:
 
-The analysis extends a previously optimized portfolio consisting of:
+- Historical Value at Risk (VaR)
+- Parametric VaR
+- Monte Carlo VaR
+- Expected Shortfall (CVaR)
+- Historical stress testing
+- Hypothetical stress testing
+- VaR backtesting
+- Kupiec model validation
 
-- AAPL
-- GLD
-- JNJ
-- JPM
-- XOM
+The analysis extends a previously optimized portfolio consisting of **AAPL, GLD, JNJ, JPM, and XOM**.
 
 Historical market data from **January 2020 through December 2025** was obtained using `yfinance`.
 
-The project focuses on measuring potential portfolio losses under normal market conditions, extreme historical events, and hypothetical stress scenarios.
+The objective is to measure potential portfolio losses under normal market conditions, extreme historical events, and hypothetical stress scenarios.
 
 ---
 
 ## Portfolio
-
-Approximate portfolio weights:
 
 | Asset | Weight |
 |---|---:|
@@ -30,41 +31,31 @@ Approximate portfolio weights:
 | JPM | 13.05% |
 | XOM | 2.72% |
 
-Portfolio value:
-
-**$1,000,000**
+**Portfolio Value: $1,000,000**
 
 ---
 
-## Methodology
+## 1. Daily Portfolio Returns
 
-### 1. Daily Portfolio Returns
+Daily asset returns were calculated as:
 
-Daily asset returns were calculated using:
-
-$$
-R_t = \frac{P_t}{P_{t-1}} - 1
-$$
+`Daily Return = Current Price / Previous Price - 1`
 
 Portfolio returns were calculated as the weighted sum of individual asset returns:
 
-$$
-R_p = \sum_{i=1}^{n} w_iR_i
-$$
+`Portfolio Return = Sum of (Asset Weight × Asset Return)`
 
-Daily portfolio profit and loss was then calculated as:
+Daily portfolio profit and loss was calculated as:
 
-$$
-P\&L_t = R_{p,t} \times \text{Portfolio Value}
-$$
+`Daily P&L = Portfolio Return × Portfolio Value`
 
 ---
 
 ## 2. Historical Value at Risk
 
-Historical VaR uses the empirical distribution of observed portfolio returns.
+Historical VaR uses the actual historical distribution of portfolio returns.
 
-The **95% VaR** corresponds to the 5th percentile of historical returns, while the **99% VaR** corresponds to the 1st percentile.
+The **95% VaR** is based on the 5th percentile of historical returns, while the **99% VaR** is based on the 1st percentile.
 
 ### 1-Day Historical VaR
 
@@ -73,63 +64,43 @@ The **95% VaR** corresponds to the 5th percentile of historical returns, while t
 | 95% | -1.2775% | $12,775 |
 | 99% | -2.5032% | $25,032 |
 
-Historical VaR does not assume that returns follow a normal distribution. Instead, it uses the actual observed distribution of portfolio returns.
+Historical VaR makes no normal-distribution assumption. It measures risk directly from observed portfolio returns.
 
 ---
 
 ## 3. Expected Shortfall
 
-Expected Shortfall, also known as Conditional Value at Risk (CVaR), measures the average loss conditional on losses exceeding the VaR threshold.
+Expected Shortfall, also known as Conditional Value at Risk (CVaR), measures the **average loss when returns are already worse than the VaR threshold**.
 
-$$
-ES_{\alpha}
-=
--E[R_p \mid R_p \le q_{\alpha}]
-$$
+Conceptually:
 
-where \(q_{\alpha}\) represents the relevant lower-tail return threshold.
+`Expected Shortfall = Average loss beyond VaR`
 
 | Confidence Level | ES Return | Expected Shortfall |
 |---|---:|---:|
 | 95% | -2.0488% | $20,488 |
 | 99% | -3.4533% | $34,533 |
 
-Expected Shortfall is substantially larger than VaR, demonstrating that losses can increase significantly once the portfolio enters the extreme tail of the return distribution.
+Expected Shortfall is substantially larger than VaR, showing that losses can become much more severe after entering the extreme tail of the return distribution.
 
 ---
 
 ## 4. Parametric Value at Risk
 
-Parametric VaR assumes portfolio returns can be approximated using a normal distribution.
+Parametric VaR assumes portfolio returns can be approximated by a normal distribution.
 
-The lower-tail return threshold is calculated as:
+The lower-tail return threshold is calculated using:
 
-$$
-q_{\alpha}
-=
-\mu + z_{\alpha}\sigma
-$$
-
-where:
-
-- \(\mu\) = mean daily portfolio return
-- \(\sigma\) = daily portfolio volatility
-- \(z_{\alpha}\) = standard normal critical value
-
-Dollar VaR is then calculated as:
-
-$$
-VaR_{\$}
-=
--q_{\alpha} \times \text{Portfolio Value}
-$$
+`VaR Return Threshold = Mean Return + Z-Score × Volatility`
 
 The portfolio's historical daily statistics were:
 
-- **Mean daily return:** 0.0812%
-- **Daily volatility:** 0.9165%
+| Metric | Value |
+|---|---:|
+| Mean Daily Return | 0.0812% |
+| Daily Volatility | 0.9165% |
 
-### Parametric VaR
+### 1-Day Parametric VaR
 
 | Confidence Level | VaR Return | VaR |
 |---|---:|---:|
@@ -140,16 +111,16 @@ The portfolio's historical daily statistics were:
 
 ## 5. Monte Carlo Value at Risk
 
-A Monte Carlo simulation was used to generate **100,000 hypothetical daily portfolio returns** using the historical portfolio mean and volatility.
+A Monte Carlo simulation generated **100,000 hypothetical daily portfolio returns** using the portfolio's historical mean return and volatility.
 
-A fixed random seed was used to ensure reproducibility.
+A fixed random seed was used to make the simulation reproducible.
 
 | Confidence Level | VaR Return | VaR |
 |---|---:|---:|
 | 95% | -1.4250% | $14,250 |
 | 99% | -2.0585% | $20,585 |
 
-Parametric and Monte Carlo VaR estimates were very similar because both methods used a normal-return assumption.
+Parametric and Monte Carlo VaR estimates were very similar because both approaches used a normal-return assumption.
 
 ![VaR Method Comparison](charts/var_method_comparison.png)
 
@@ -163,37 +134,29 @@ Parametric and Monte Carlo VaR estimates were very similar because both methods 
 | Parametric | $14,263 | $20,509 |
 | Monte Carlo | $14,250 | $20,585 |
 
-Historical VaR was lower than the normal-based methods at the 95% confidence level but substantially higher at the 99% confidence level.
+At the 95% confidence level, all three methods produced relatively similar estimates.
 
-This suggests that extreme historical portfolio losses were more severe than implied by the normal distribution assumption.
+At the 99% confidence level, Historical VaR was noticeably higher than the normal-based Parametric and Monte Carlo estimates.
 
-The result highlights an important limitation of normal-based VaR models: they may fail to fully capture extreme tail events.
+This suggests that the historical portfolio experienced more severe extreme losses than implied by the normal distribution assumption.
 
 ---
 
 ## 7. 10-Day Value at Risk
 
-Risk was also evaluated over a **10-trading-day holding period**.
+Risk was also measured over a **10-trading-day holding period**.
 
-Historical 10-day returns were calculated by compounding rolling daily returns:
+Historical 10-day returns were calculated by compounding daily portfolio returns.
 
-$$
-R_{10}
-=
-\prod_{t=1}^{10}(1+R_t)-1
-$$
+Conceptually:
+
+`10-Day Return = Product of (1 + Daily Return) - 1`
 
 For the parametric model:
 
-$$
-\mu_{10}=10\mu
-$$
+`10-Day Mean = Daily Mean × 10`
 
-and:
-
-$$
-\sigma_{10}=\sqrt{10}\sigma
-$$
+`10-Day Volatility = Daily Volatility × sqrt(10)`
 
 ### 10-Day VaR
 
@@ -213,29 +176,33 @@ For example, Monte Carlo 95% VaR increased from approximately **$14,250 over one
 
 ## 8. Historical Stress Testing
 
-Historical stress testing was used to identify the portfolio's most severe realized losses.
+Historical stress testing identifies the most severe losses that actually occurred in the dataset.
 
 ### Worst Single Trading Day
 
-The worst daily portfolio return occurred on **12 March 2020**:
+The worst daily portfolio return occurred on **12 March 2020**.
 
-- **Portfolio return:** -5.91%
-- **Portfolio loss:** $59,087
+| Metric | Result |
+|---|---:|
+| Portfolio Return | -5.91% |
+| Portfolio Loss | $59,087 |
 
-This loss was substantially larger than the 1-day 99% Historical VaR of approximately **$25,032**.
+The loss was substantially larger than the 1-day 99% Historical VaR of approximately **$25,032**.
 
-This demonstrates that VaR should not be interpreted as the maximum possible portfolio loss.
+This demonstrates that VaR represents a loss threshold rather than a maximum possible loss.
 
 ### Worst Rolling 10-Day Period
 
-The most severe rolling 10-day period ended on **19 March 2020**:
+The most severe rolling 10-day period ended on **19 March 2020**.
 
-- **10-day return:** -14.72%
-- **Portfolio loss:** $147,234
+| Metric | Result |
+|---|---:|
+| 10-Day Return | -14.72% |
+| Portfolio Loss | $147,234 |
 
-The worst realized 10-day loss was approximately **2.7 times** the 10-day 99% Historical VaR of approximately $55,100.
+The worst realized 10-day loss was approximately **2.7 times** the 10-day 99% Historical VaR of about $55,100.
 
-Several of the worst rolling 10-day periods occurred around March 2020, showing how extreme portfolio losses can cluster during periods of severe market stress.
+Several of the worst 10-day periods occurred around March 2020, showing that large portfolio losses can cluster during periods of severe market stress.
 
 ---
 
@@ -243,7 +210,7 @@ Several of the worst rolling 10-day periods occurred around March 2020, showing 
 
 Three illustrative hypothetical stress scenarios were constructed.
 
-These scenarios are designed for risk analysis and are **not forecasts**.
+These scenarios are used for risk analysis and are **not forecasts**.
 
 ### Stress Scenarios
 
@@ -253,7 +220,7 @@ These scenarios are designed for risk analysis and are **not forecasts**.
 | Gold Correction | -5% | -12% | -3% | -5% | -6% |
 | Broad Market Shock | -20% | -8% | -8% | -18% | -15% |
 
-### Portfolio Results
+### Portfolio Impact
 
 | Scenario | Portfolio Return | Portfolio P&L |
 |---|---:|---:|
@@ -263,25 +230,21 @@ These scenarios are designed for risk analysis and are **not forecasts**.
 
 ![Hypothetical Stress Testing](charts/hypothetical_stress_test.png)
 
-The **Equity Sell-Off** produced a relatively limited portfolio loss because the assumed increase in GLD partially offset losses in equities.
+The **Equity Sell-Off** caused a relatively small portfolio loss because the assumed 5% increase in GLD offset part of the equity decline.
 
-The **Gold Correction** produced a much larger loss because GLD represented the largest portfolio allocation.
+The **Gold Correction** produced a much larger loss because GLD represents the largest portfolio allocation.
 
-The **Broad Market Shock** generated the largest hypothetical loss because multiple portfolio assets declined simultaneously, reducing the benefits of diversification.
+The **Broad Market Shock** generated the largest hypothetical loss because several portfolio assets declined simultaneously, weakening the benefits of diversification.
 
 ---
 
 ## 10. Stress Contribution Analysis
 
-Asset-level contributions were calculated as:
+Each asset's contribution to the stressed portfolio return was calculated as:
 
-$$
-Contribution_i
-=
-w_i \times Shock_i
-$$
+`Stress Contribution = Portfolio Weight × Asset Shock`
 
-### Contribution by Asset
+### Contribution to Portfolio Return
 
 | Scenario | AAPL | GLD | JNJ | JPM | XOM |
 |---|---:|---:|---:|---:|---:|
@@ -289,81 +252,58 @@ $$
 | Gold Correction | -0.9875% | -7.7364% | 0.0000% | -0.6525% | -0.1632% |
 | Broad Market Shock | -3.9500% | -5.1576% | 0.0000% | -2.3490% | -0.4080% |
 
-In the Gold Correction scenario, GLD alone contributed approximately:
+In the Gold Correction scenario, GLD alone contributed approximately **-$77,364** of the total **-$95,396** portfolio loss.
 
-**-$77,364**
+This highlights concentration risk.
 
-of the total:
-
-**-$95,396**
-
-portfolio loss.
-
-This highlights an important distinction between diversification and concentration risk.
-
-Although the portfolio contains multiple assets, its large GLD allocation means that a severe decline in gold can still have a substantial effect on total portfolio value.
+Although the portfolio contains several assets, its large allocation to GLD means that a severe decline in gold can still have a major effect on total portfolio value.
 
 ---
 
 ## 11. VaR Backtesting
 
-A rolling **252-trading-day parametric VaR model** was backtested.
+A rolling **252-trading-day Parametric VaR model** was backtested.
 
-For each trading day, the VaR estimate was calculated using only information available during the previous 252 trading days.
+For each day, the model estimated VaR using only the previous 252 trading days.
 
-The rolling mean and volatility estimates were shifted by one day to avoid look-ahead bias.
+The rolling statistics were shifted by one day to prevent look-ahead bias.
 
-A VaR breach occurred when:
+A VaR breach occurs when:
 
-$$
-R_t < VaR_t
-$$
-
-meaning that the realized portfolio return was worse than the VaR threshold predicted by the model.
-
-### Backtesting Results
+`Actual Portfolio Return < VaR Threshold`
 
 The backtest contained **1,255 observations**.
 
-| Confidence | Expected Breach Rate | Actual Breach Rate | Expected Breaches | Actual Breaches |
+### Backtesting Results
+
+| Confidence Level | Expected Breach Rate | Actual Breach Rate | Expected Breaches | Actual Breaches |
 |---|---:|---:|---:|---:|
 | 95% | 5.00% | 4.46% | 62.8 | 56 |
 | 99% | 1.00% | 2.07% | 12.6 | 26 |
 
-The 95% model produced approximately the expected number of exceptions.
+The 95% VaR model produced approximately the expected number of exceptions.
 
-However, the 99% model experienced **more than twice the expected number of breaches**.
+However, the 99% VaR model recorded **26 breaches compared with only 12.6 expected breaches**.
 
 ![99% VaR Backtest](charts/var_99_backtest.png)
 
-The backtest also showed periods where VaR breaches occurred close together, indicating that extreme losses can cluster during periods of elevated market volatility.
+The chart also shows periods where breaches occurred close together, indicating that extreme losses can cluster during periods of elevated market volatility.
 
 ---
 
 ## 12. Kupiec Proportion of Failures Test
 
-The **Kupiec Proportion of Failures test** was used to determine whether the observed VaR exception frequency was statistically consistent with the model's expected exception probability.
+The **Kupiec Proportion of Failures Test** evaluates whether the number of observed VaR breaches is statistically consistent with the number expected by the model.
 
 The null hypothesis is:
 
-$$
-H_0:
-p_{\text{observed}}
-=
-p_{\text{expected}}
-$$
+`H0: Observed breach probability = Expected breach probability`
 
-A significance level of:
-
-$$
-\alpha = 0.05
-$$
-
-was used.
+A significance level of **5%** was used.
 
 ### Results
 
-| Confidence | LR Statistic | P-Value |
+| Confidence Level | LR Statistic | P-Value |
 |---|---:|---:|
 | 95% | 0.7918 | 0.3736 |
 | 99% | 11.1217 | 0.0009 |
@@ -372,9 +312,7 @@ was used.
 
 The p-value was:
 
-$$
-0.3736 > 0.05
-$$
+`0.3736 > 0.05`
 
 Therefore, the null hypothesis was **not rejected**.
 
@@ -384,13 +322,11 @@ The observed 95% VaR breach frequency was reasonably consistent with the model's
 
 The p-value was:
 
-$$
-0.0009 < 0.05
-$$
+`0.0009 < 0.05`
 
 Therefore, the null hypothesis was **rejected**.
 
-The observed frequency of 99% VaR breaches was statistically inconsistent with the model's expected 1% breach rate.
+The observed 99% VaR breach frequency was statistically inconsistent with the expected 1% breach rate.
 
 This indicates that the rolling normal-parametric VaR model underestimated the frequency of extreme portfolio losses.
 
@@ -398,21 +334,21 @@ This indicates that the rolling normal-parametric VaR model underestimated the f
 
 ## Key Findings
 
-- Historical, Parametric, and Monte Carlo VaR produced relatively similar estimates at the 95% confidence level.
-- Historical 99% VaR was substantially higher than normal-based VaR estimates, indicating more severe empirical tail losses.
-- Expected Shortfall showed that average losses beyond the VaR threshold were significantly larger than VaR itself.
-- 95% Expected Shortfall reached approximately **$20,488**, while 99% Expected Shortfall reached approximately **$34,533**.
-- The worst historical single-day portfolio loss was approximately **$59,087**.
-- The worst historical rolling 10-day portfolio loss reached approximately **$147,234**.
-- The worst historical 10-day loss was approximately 2.7 times the corresponding 99% Historical VaR.
-- Stress testing revealed substantial exposure to GLD because of its large portfolio weight.
-- Diversification provided meaningful protection during the Equity Sell-Off scenario when GLD moved positively.
-- Diversification benefits weakened substantially when several portfolio assets declined simultaneously.
-- The Broad Market Shock produced the largest hypothetical loss of approximately **$118,646**.
-- The rolling 95% parametric VaR model produced an exception rate close to expectations.
-- The rolling 99% VaR model recorded a **2.07% breach rate compared with the expected 1%**.
-- The Kupiec test rejected the 99% VaR model's expected breach frequency.
-- The results suggest that a normal-return VaR model can provide reasonable estimates under moderate conditions while understating extreme tail risk.
+- Historical, Parametric, and Monte Carlo VaR produced similar results at the 95% confidence level.
+- Historical 99% VaR was substantially higher than the normal-based VaR estimates.
+- 95% Expected Shortfall was approximately **$20,488**.
+- 99% Expected Shortfall was approximately **$34,533**.
+- The worst historical single-day loss was approximately **$59,087**.
+- The worst historical rolling 10-day loss was approximately **$147,234**.
+- The worst 10-day historical loss was about **2.7 times** the 10-day 99% Historical VaR.
+- Stress testing revealed meaningful concentration risk from the large GLD allocation.
+- GLD provided significant downside protection in the Equity Sell-Off scenario.
+- The diversification benefit weakened when multiple asset classes declined simultaneously.
+- The Broad Market Shock produced the largest hypothetical loss at approximately **$118,646**.
+- The rolling 95% Parametric VaR model produced a breach rate close to expectations.
+- The rolling 99% VaR model recorded a **2.07% breach rate compared with 1% expected**.
+- The Kupiec test rejected the 99% VaR model's expected exception frequency.
+- Normal-distribution VaR performed reasonably for moderate tail risk but understated extreme tail risk in this dataset.
 
 ---
 
@@ -449,27 +385,29 @@ portfolio-var-stress-testing/
 ## Limitations
 
 - Historical estimates depend on the selected 2020-2025 sample period.
-- Historical relationships between assets may not persist in future market conditions.
+- Historical relationships between assets may not continue in the future.
 - Parametric VaR assumes normally distributed portfolio returns.
 - The Monte Carlo model assumes constant historical mean and volatility.
-- The Monte Carlo simulation does not model changing volatility regimes or fat-tailed return distributions.
+- The simulation does not model changing volatility regimes or fat-tailed distributions.
 - Hypothetical stress scenarios are illustrative rather than forecasts.
-- Portfolio weights are held constant throughout the analysis.
+- Portfolio weights are assumed to remain constant.
 - Transaction costs, taxes, liquidity risk, and portfolio rebalancing are not modeled.
-- The Kupiec test evaluates whether the overall number of VaR exceptions is consistent with expectations but does not test whether breaches occur independently over time.
+- The Kupiec test evaluates the number of breaches but does not test whether breaches occur independently over time.
 
 ---
 
 ## Conclusion
 
-This project demonstrates that no single risk measure provides a complete view of portfolio market risk.
+This project demonstrates that no single measure provides a complete view of portfolio market risk.
 
-Value at Risk provides a useful estimate of potential loss thresholds, but it does not measure the severity of losses once those thresholds are exceeded.
+Value at Risk provides a useful estimate of potential loss thresholds, but it does not describe how severe losses may become after the threshold is exceeded.
 
-Expected Shortfall addresses this limitation by examining average losses in the extreme tail, while historical and hypothetical stress testing evaluate how the portfolio may behave during severe market conditions.
+Expected Shortfall addresses this limitation by measuring average losses within the extreme tail.
 
-Backtesting provides an additional layer of model validation by comparing predicted VaR thresholds against realized portfolio returns.
+Historical and hypothetical stress testing provide additional insight into how the portfolio behaves during severe market conditions, while backtesting evaluates whether the VaR model performs as expected.
 
-The rolling 95% parametric VaR model produced an exception frequency broadly consistent with expectations. However, the 99% model recorded substantially more breaches than expected, and the Kupiec test rejected the model's expected 1% exception rate.
+The rolling 95% Parametric VaR model produced an exception frequency broadly consistent with expectations.
 
-Overall, the results show that combining **VaR, Expected Shortfall, stress testing, Monte Carlo simulation, and statistical backtesting** provides a more comprehensive view of portfolio risk than relying on VaR alone.
+However, the 99% model recorded substantially more breaches than expected, and the Kupiec test rejected the model's expected 1% exception rate.
+
+Overall, combining **VaR, Expected Shortfall, Monte Carlo simulation, stress testing, and statistical backtesting** provides a more comprehensive view of portfolio risk than relying on VaR alone.
